@@ -1,0 +1,46 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "127.0.0.1::80"
+    depends_on:
+      api:
+        condition: service_healthy
+
+  api:
+    build: ./app
+    environment:
+      PREVIEW_ID: ${COMPOSE_PROJECT_NAME:?select a project}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    depends_on:
+      store:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/api/health', timeout=2).close()"
+      interval: 3s
+      timeout: 3s
+      retries: 15
+
+  store:
+    image: redis:7.4-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
+    command: ["sh", "-ec", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    volumes:
+      - preview_data:/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -qx PONG'
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  preview_data:

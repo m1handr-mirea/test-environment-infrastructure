@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Паспорт тестовой среды</title>
+<style>
+body { font: 18px system-ui, sans-serif; margin: 60px auto; max-width: 650px; padding: 0 20px; color: #202020; }
+label, output { display: block; margin: 1em 0; }
+input, button { font: inherit; padding: 8px; }
+</style>
+<h1>Паспорт тестовой среды</h1>
+<p>Идентификатор среды <strong id="preview"></strong></p>
+<form id="form">
+  <label>Метка проверки <input name="label" maxlength="80" required></label>
+  <button>Сохранить</button>
+</form>
+<output id="result" role="status"></output>
+<script>
+const form = document.querySelector('#form');
+const preview = document.querySelector('#preview');
+const result = document.querySelector('#result');
+async function refresh(options) {
+  try {
+    const response = await fetch('/api/marker', options);
+    if (!response.ok) throw new Error(response.status);
+    const data = await response.json();
+    preview.textContent = data.preview;
+    form.elements.label.value = data.label;
+    result.textContent = 'Текущая метка: ' + (data.label || 'пусто');
+  } catch (error) {
+    result.textContent = 'Ошибка запроса: ' + error.message;
+  }
+}
+form.addEventListener('submit', event => {
+  event.preventDefault();
+  refresh({
+    method: 'PUT',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({label: form.elements.label.value})
+  });
+});
+refresh();
+</script>
+</html>
