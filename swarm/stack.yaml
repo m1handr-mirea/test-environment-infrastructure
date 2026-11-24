@@ -1,0 +1,35 @@
+version: "3.8"
+services:
+  gateway:
+    image: registry:5000/course-gateway:${REVISION}
+    ports:
+      - target: 80
+        published: ${PREVIEW_PORT}
+        protocol: tcp
+        mode: ingress
+  api:
+    image: registry:5000/course-api:${REVISION}
+    environment:
+      PREVIEW_ID: ${STACK}
+      PREVIEW_REVISION: ${REVISION}
+      REDIS_PASSWORD_FILE: /run/secrets/redis_password
+    secrets: [redis_password]
+    deploy:
+      replicas: 2
+      placement:
+        max_replicas_per_node: 1
+  store:
+    image: redis:7.4-alpine
+    command: ["sh", "-ec", "exec redis-server --appendonly yes --requirepass \"$$(cat /run/secrets/redis_password)\""]
+    volumes:
+      - preview_data:/data
+    secrets: [redis_password]
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+volumes:
+  preview_data:
+secrets:
+  redis_password:
+    external: true
+    name: ${STACK}_redis_password

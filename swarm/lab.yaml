@@ -1,0 +1,28 @@
+name: course-swarm
+services:
+  registry:
+    image: registry:2
+    volumes:
+      - registry-data:/var/lib/registry
+  manager:
+    image: docker:27.5.1-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    entrypoint: ["dockerd", "--host=unix:///var/run/docker.sock", "--insecure-registry=registry:5000"]
+    volumes:
+      - manager-data:/var/lib/docker
+    ports:
+      - "127.0.0.1::18080-18087"
+  worker:
+    image: docker:27.5.1-dind
+    privileged: true
+    environment:
+      DOCKER_TLS_CERTDIR: ""
+    entrypoint: ["dockerd", "--host=unix:///var/run/docker.sock", "--insecure-registry=registry:5000"]
+    volumes:
+      - worker-data:/var/lib/docker
+volumes:
+  manager-data:
+  worker-data:
+  registry-data:
