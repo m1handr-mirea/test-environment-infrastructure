@@ -103,7 +103,7 @@ def http_json(url, path):
 def ready(stack, revision, url):
     current = services()
     expected = {"gateway": "1/1", "api": "2/2", "store": "1/1"}
-    replicas = {s["Name"]: s["Replicas"] for s in current}
+    replicas = {s["Name"]: s["Replicas"].split()[0] for s in current}
     if any(replicas.get(f"{stack}_{name}") != replicas_expected
            for name, replicas_expected in expected.items()):
         return False
