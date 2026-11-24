@@ -1,0 +1,15 @@
+name: Verify preview infrastructure
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build, deploy and verify isolated previews
+        run: python3 -u verify.py
