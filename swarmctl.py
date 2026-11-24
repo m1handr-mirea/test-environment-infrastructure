@@ -203,8 +203,12 @@ def synchronize(repo, previous):
                 and pull["user"]["login"] == repo.split("/", 1)[0]):
             desired[pull["number"]] = head["sha"]
 
-    existing = read(*manager("stack", "ls", "--format", "{{.Name}}")).splitlines()
-    for stack in existing:
+    existing = set(read(*manager("stack", "ls", "--format", "{{.Name}}")).splitlines())
+    # A process can stop after stack rm and before its volume or secret is removed.
+    for kind, suffix in (("volume", "_preview_data"), ("secret", "_redis_password")):
+        names = read(*manager(kind, "ls", "--format", "{{.Name}}")).splitlines()
+        existing.update(name.removesuffix(suffix) for name in names if name.endswith(suffix))
+    for stack in sorted(existing):
         match = re.fullmatch(PR_PREFIX + r"(\d+)", stack)
         if match and int(match[1]) not in desired:
             down(stack)
