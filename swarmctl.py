@@ -135,7 +135,8 @@ def build(revision):
     ):
         archive = run("git", "archive", tree, capture=True)
         image = image_name(service, revision)
-        run(*manager("build", "-t", image, "-f", dockerfile, "-"), data=archive)
+        run(*manager("build", "--network=host", "-t", image, "-f", dockerfile, "-"),
+            data=archive)
         run(*manager("push", image))
 
 
